@@ -39,8 +39,8 @@ class Models():
                 # Remove the face and pose data
                 df = df[~df["type"].isin(["face", "pose"])]
 
-                # Remove all rows that have NaN
-                df = df.dropna()
+                # Change NaNs to 0s
+                df = df.fillna(0)
 
                 # Add to keyword data
                 self.data[keyword].append(df)
