@@ -101,3 +101,18 @@ class Models():
             return None
         
         return self.average_data[keyword]
+    
+    def save_average(self, keyword):
+        """
+        Saves the average dataset as a parquet file
+        """
+        if keyword not in self.average_data:
+            return
+        
+        if not os.path.exists(f"averages\\{keyword}"):
+            os.mkdir(f"averages\\{keyword}")
+
+        self.average_data[keyword].to_parquet(f"averages\\{keyword}\\average.parquet", index=False)
+        self.average_data[keyword].to_csv(f"averages\\{keyword}\\average.csv", index=False)
+
+        
