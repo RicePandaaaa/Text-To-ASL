@@ -10,7 +10,7 @@ class Models():
         self.average_data = {}
 
         # Limit number of folders for now for speed + testing
-        self.x = 5
+        self.x = 1
 
         self.read_files()
         self.make_average_data()
@@ -56,12 +56,42 @@ class Models():
         averages of the values within the original DataFrames
         """
         for keyword in self.data:
+            # Combine the dataframes together
             concat_df = pd.concat(self.data[keyword])
-            numeric_columns = concat_df.select_dtypes(include=['int16', 'float64']).columns
 
-            self.average_df = concat_df.groupby(["row_id"])[numeric_columns].mean().reset_index()
+            # Extract and average the coordinates
+            float_columns = concat_df.select_dtypes(include=["float64"]).columns
+            float_columns_means = concat_df.groupby("row_id")[float_columns].mean()
+
+            # Remake the DataFrame
+            non_float_columns = concat_df.drop(columns=float_columns).drop_duplicates(subset="row_id")
+            concat_df = pd.merge(non_float_columns, float_columns_means.reset_index(), on="row_id")
+
+            # Save the DataFrame
+            self.average_data[keyword] = self.trim_dataframe(concat_df)
 
             print(f"Finished making average dataframe for \"{keyword}\"")
+
+    def trim_dataframe(self, df):
+
+        # Get frames in reverse order (starting from the last)
+        frames = reversed(df["frame"].unique())
+        non_empty_frame = None
+
+        # Iterate over frames in reverse to find the first non-zero frame
+        for frame in frames:
+            frame_data = df[df["frame"] == frame]
+            
+            # Found non-empty frame
+            if not ((frame_data[["x", "y", "z"]] == 0).all().all()):
+                non_empty_frame = frame
+                break
+
+        # Do the trim if there are non-empty frames
+        if non_empty_frame is not None:
+            return df[df["frame"] <= non_empty_frame]
+        
+        return None
 
     def get_average_data(self, keyword):
         """
